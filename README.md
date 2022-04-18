@@ -32,12 +32,12 @@ First number reflects the assessment of the transition
 when the robot moves along the y-axis, next angle evaluations
 go by roundabout counterclockwise
 The graphical representation is shown below: 
-# For 8 neighbours:                   For 16 neighbours:
-#                                     3   2   1  16  15
-# 2   1   8                           4              14
-# 3  i,j  7                           5      i,j     13
-# 4   5   6                           6              12
-#                                     7   8   9  10  11 
+For 8 neighbours:                   For 16 neighbours:
+                                    3   2   1  16  15
+2   1   8                           4              14
+3  i,j  7                           5      i,j     13
+4   5   6                           6              12
+                                    7   8   9  10  11 
 Data line:
 min_x min_y max_x max_y r[1] r[2] ... r[8] ... r[16]
 Combining lines with 12 and 20 numbers is not allowed
