@@ -8,13 +8,13 @@ git clone git@github.com:grand-yarl/angle_planner.git
 
 2. Add following to move_base.launch
 
-# <param name="base_global_planner" value="angle_planner/AnglePlanner"/>
+param name="base_global_planner" value="angle_planner/AnglePlanner"/
 
 3. Add orientation publisher node by adding to navigation.launch
 
-# <!-- Orientation publisher -->
-# <arg name="orient_file" default="$(find navigation_directory)/orientation/orientation_file.txt"/>
-# <node pkg="orientation_pub" name="orientation_pub" type="orientation_pub" args="$(arg orient_file)"/>
+!-- Orientation publisher --
+arg name="orient_file" default="$(find navigation_directory)/orientation/orientation_file.txt"/
+node pkg="orientation_pub" name="orientation_pub" type="orientation_pub" args="$(arg orient_file)"/
 
 4. Create "orientation" directory in navigation and put orientation_file.txt in it
 
