@@ -39,10 +39,15 @@ will be taken from the bottom lines.
 Symbol # is used for comments.
 
 6. Parameters in move_base.yaml:
+
 AnglePlanner:
+
   costmap_critical - Critical cost for costmap cell, default = 128
+  
   orientation_critical - Critical cost for orientation restriction, default = 1
+  
   orientation_coeff - Coefficient of orientation impact, default = 255
+  
   use_16 - Use 16 neighbours instead of 8, default = False
 
 7. Build your workspace
