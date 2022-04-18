@@ -45,7 +45,7 @@ Data line:
 ```no-highlight
 min_x min_y max_x max_y r[1] r[2] ... r[8] ... r[16].
 ```
-Combining lines with 12 and 20 numbers is not allowed
+Combining lines with 12 and 20 numbers is not allowed.
 Restriction areas can overlap, but restriction array for the intersection
 will be taken from the bottom lines. 
 Symbol # is used for comments.
