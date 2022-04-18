@@ -21,22 +21,22 @@ git clone git@github.com:grand-yarl/angle_planner.git
 Orientation restrictions in area are defined by 12 or 20
 double numbers (12 numbers for 8 neighbours, 20 numbers for 16 neighbours)
 in one line, that are separated by space 
-(other separation types will cause an error!)
+(other separation types will cause an error!).
 First 4 numbers define rectangle area bounds in global coordinate frame
 Coordinates of first point should be less than coordinates of second
-(min_x < max_x, min_y < max_y)
-Following 8 or 16 numbers define restriction array
-All numbers in array should be belong interval [0, 1]
+(min_x < max_x, min_y < max_y).
+Following 8 or 16 numbers define restriction array.
+All numbers in array should be belong interval [0, 1].
 Subsequence of numbers in array is determined by the rule:
 First number reflects the assessment of the transition 
 when the robot moves along the y-axis, next angle evaluations
-go by roundabout counterclockwise
+go by roundabout counterclockwise.
 Data line:
-min_x min_y max_x max_y r[1] r[2] ... r[8] ... r[16]
+min_x min_y max_x max_y r[1] r[2] ... r[8] ... r[16].
 Combining lines with 12 and 20 numbers is not allowed
 Restriction areas can overlap, but restriction array for the intersection
-will be taken from the bottom lines 
-Symbol # is used for comments
+will be taken from the bottom lines. 
+Symbol # is used for comments.
 
 6. Parameters in move_base.yaml:
 AnglePlanner:
