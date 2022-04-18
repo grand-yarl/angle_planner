@@ -7,15 +7,15 @@ Installation
 git clone git@github.com:grand-yarl/angle_planner.git
 
 2. Add following to move_base.launch
-
+'''
 <param name="base_global_planner" value="angle_planner/AnglePlanner"/>
-
+'''
 3. Add orientation publisher node by adding to navigation.launch
-
+'''
 <!-- Orientation publisher -->
 <arg name="orient_file" default="$(find navigation_directory)/orientation/orientation_file.txt"/>
 <node pkg="orientation_pub" name="orientation_pub" type="orientation_pub" args="$(arg orient_file)"/>
-
+'''
 4. Create "orientation" directory in navigation and put orientation_file.txt in it
 
 5. Data format described in orientation_file.txt. Look examples there!
@@ -34,7 +34,9 @@ First number reflects the assessment of the transition
 when the robot moves along the y-axis, next angle evaluations
 go by roundabout counterclockwise.
 Data line:
+'''
 min_x min_y max_x max_y r[1] r[2] ... r[8] ... r[16].
+'''
 Combining lines with 12 and 20 numbers is not allowed
 Restriction areas can overlap, but restriction array for the intersection
 will be taken from the bottom lines. 
