@@ -31,7 +31,7 @@ Following 8 or 16 numbers define restriction array.
 All numbers in array should be belong interval [0, 1].
 Subsequence of numbers in array is determined by the rule:
 First number reflects the assessment of the transition 
-when the robot moves along the y-axis, next angle evaluations
+when the robot moves along the x-axis, next angle evaluations
 go by roundabout counterclockwise.
 ```no-highlight
               x                                           x
