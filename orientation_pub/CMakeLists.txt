@@ -5,8 +5,8 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   rospy
   std_msgs
-  genmsg
 )
+
 
 ## Declare a catkin package
 catkin_package()

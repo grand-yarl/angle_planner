@@ -12,6 +12,7 @@
  #include "que.h"
  #include "step.h"
  #include "std_msgs/String.h"
+ #include "std_msgs/Bool.h"
  #include <iostream>
  #include <fstream>
  #include <unistd.h>
@@ -24,6 +25,15 @@
  #ifndef GLOBAL_PLANNER_CPP
  #define GLOBAL_PLANNER_CPP
 
+struct restr_area_8
+{
+  unsigned int min_x;
+  unsigned int min_y;
+  unsigned int max_x;
+  unsigned int max_y;
+  double restr[8];
+};
+
  namespace angle_planner {
 
  class AnglePlanner : public nav_core::BaseGlobalPlanner {
@@ -31,40 +41,36 @@
      
   costmap_2d::Costmap2DROS *costmap_ros_;
   costmap_2d::Costmap2D *costmap_;
-  
   unsigned long int bound_x, bound_y;
-  double*** Orientation;
+  
   int costmap_critical_;
   double orientation_critical_;
   double orientation_coeff_;
-  bool use_16_;
+  std_msgs::Bool use_16_;
+  
+  vector<restr_area_8> Areas;
+  
   dynamic_reconfigure::Server<angle_planner::AnglePlannerConfig> *dsrv_;
     
   void reconfigureCB(angle_planner::AnglePlannerConfig &config, uint32_t level);
   
-  double get_orientation(int prev_x, int prev_y, int next_x, int next_y);
-
-  void create_orientation(unsigned int lim_x, unsigned int lim_y);
-  
-  void put_orientation();
-  
   step Dijkstra_search(int start_x, int start_y, int goal_x, int goal_y);
+  
+  std::vector<point> structPath(step Came_From, int start_x, int start_y, int goal_x, int goal_y);
   
   que neighbours(int current_x, int current_y);
   
-  double step_cost(int prev_x, int prev_y, int next_x, int next_y);
-  
   double heuristic(int current_x, int current_y, int goal_x, int goal_y);
   
-  std::vector<point> structPath(step Came_From, int start_x, int start_y, int goal_x, int goal_y);
-     
+  double step_cost(int prev_x, int prev_y, int next_x, int next_y);
+  
+  double get_orientation(int prev_x, int prev_y, int next_x, int next_y);
+  
   void put_orientation(const std_msgs::String::ConstPtr& msg);
   
  public:
 
   AnglePlanner();
-  
-  ~AnglePlanner();
   
   AnglePlanner(std::string name, costmap_2d::Costmap2DROS* costmap_ros);
   

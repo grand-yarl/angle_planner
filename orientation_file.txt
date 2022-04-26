@@ -10,15 +10,17 @@
 #  All numbers in array should be belong interval [0, 1]
 #  Subsequence of numbers in array is determined by the rule:
 #  First number reflects the assessment of the transition 
-#  when the robot moves along the y-axis, next angle evaluations
+#  when the robot moves along the x-axis, next angle evaluations
 #  go by roundabout counterclockwise
 #  The graphical representation is shown below: 
 #  For 8 neighbours:                   For 16 neighbours:
-#                                      3   2   1  16  15
-#  2   1   8                           4              14
-#  3  i,j  7                           5      i,j     13
-#  4   5   6                           6              12
-#                                      7   8   9  10  11 
+#              x                                           x
+#              ^                         3   2   1  16  15 ^
+#    2   1   8 |                         4              14 |
+#    3  i,j  7 |                         5      i,j     13 |
+#    4   5   6 |                         6              12 |
+#  y<----------|                         7   8   9  10  11 |
+#                                      y<------------------|
 #  Data line:
 #  min_x min_y max_x max_y r[1] r[2] ... r[8] ... r[16]
 #  Combining lines with 12 and 20 numbers is not allowed
@@ -27,8 +29,7 @@
 #  Symbol # is used for comments
 ####################
 
-0 0 5 5 0 0.1 1 1 1 1 1 0.1 #Area 1
+-2 -2 2 2 0 1 1 1 1 1 1 1 #Area 1
 
--5 0 5 5 0 0.1 1 1 1 1 1 0.1 #Area 2
+2  -2 4 2 1 0 1 1 1 1 1 1 #Area 2
 
--5 -3 5 5 0 0.1 1 1 1 1 1 0.1  #Area 3

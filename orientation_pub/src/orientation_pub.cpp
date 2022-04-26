@@ -1,11 +1,13 @@
 
 #include "ros/ros.h"
 #include "std_msgs/String.h"
+#include "std_msgs/Bool.h"
 #include <stdio.h>
 #include <iostream>
 #include <fstream>
 #include <vector>
 #include <sstream>
+
 using namespace std;
 
 bool check_format(char* filepath)
@@ -125,20 +127,17 @@ bool check_format(char* filepath)
 
 
 int main (int argc, char **argv) { 
-    int i, ch;
  
     if (argc != 4) {
       ROS_ERROR("Invalid number %d of parameters for node ", argc);
       return 1;
     }
- 
-    
     ros::init(argc, argv, "orientation_pub");
     
     ros::NodeHandle n;
     
     ros::Publisher orientation_pub = n.advertise<std_msgs::String>("orientation_file", 1000);
-    
+
     ros::Rate loop_rate(0.5);
 
     while (ros::ok())
@@ -148,13 +147,13 @@ int main (int argc, char **argv) {
     	{
     	    return 1;
     	}
-    
+    	
     	std_msgs::String msg;
 
     	std::stringstream ss;
-    
-    
+    	
     	ss << argv[1];
+    	
     	msg.data = ss.str();
 
     	ROS_INFO("%s", msg.data.c_str());

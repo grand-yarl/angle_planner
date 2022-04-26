@@ -20,6 +20,19 @@ namespace angle_planner {
     initialize(name, costmap_ros);
  }
 
+ AnglePlanner::~AnglePlanner()
+ {
+    for (int i = 0; i < bound_x; i++)
+    {
+    	for (int j = 0; j < bound_y; j++)
+    	{
+    		delete [] Orientation[i][j];
+    	}
+    	delete [] Orientation[i];
+    }
+    delete [] Orientation;
+ }
+
  void AnglePlanner::initialize(std::string name, costmap_2d::Costmap2DROS* costmap_ros)
  {
     costmap_ros_ = costmap_ros;
@@ -31,6 +44,8 @@ namespace angle_planner {
     dsrv_ = new dynamic_reconfigure::Server<angle_planner::AnglePlannerConfig>(nh);
     dynamic_reconfigure::Server<angle_planner::AnglePlannerConfig>::CallbackType cb = boost::bind(&AnglePlanner::reconfigureCB, this, _1, _2);
     dsrv_->setCallback(cb);
+   
+    create_orientation(bound_x, bound_y);
     
  }
 
@@ -39,7 +54,7 @@ namespace angle_planner {
     costmap_critical_ = config.costmap_critical;
     orientation_critical_ = config.orientation_critical;
     orientation_coeff_ = config.orientation_coeff;
-    use_16_.data = config.use_16;
+    use_16_ = config.use_16;
  }
 
  step AnglePlanner::Dijkstra_search(int start_x, int start_y, int goal_x, int goal_y)
@@ -89,7 +104,7 @@ namespace angle_planner {
             double new_cost;
             next = N.pop_min();
             if (costmap_->getCost(next.coord[0], next.coord[1]) >= costmap_critical_ || get_orientation(current_x, current_y, next.coord[0], next.coord[1]) >= orientation_critical_) new_cost = 10e9;
-            else new_cost = Cost_so_Far.take_cost(current_x, current_y) + costmap_->getCost(current_x, current_y) + step_cost(current_x, current_y, next.coord[0], next.coord[1]) + orientation_coeff_ * get_orientation(current_x, current_y, next.coord[0], next.coord[1]);
+            else new_cost = Cost_so_Far.take_cost(current_x, current_y) + costmap_->getCost(current_x, current_y) + orientation_coeff_ * get_orientation(current_x, current_y, next.coord[0], next.coord[1]);
             if (Cost_so_Far.where_el(next.coord[0], next.coord[1]) == false || new_cost < Cost_so_Far.take_cost(next.coord[0], next.coord[1]))
             {
                 if (Cost_so_Far.where_el(next.coord[0], next.coord[1]) == false) Cost_so_Far.put(next.coord[0], next.coord[1], new_cost);
@@ -103,36 +118,6 @@ namespace angle_planner {
     }
     
     return Came_From;
- }
-  
- std::vector<point> AnglePlanner::structPath(step Came_From, int start_x, int start_y, int goal_x, int goal_y)
- {
-     point current;
-     std::vector<point> Path;
-     
-     current.coord[0] = goal_x;
-     current.coord[1] = goal_y;
-     current.cost = 0;
-     
-     if (Came_From.is_empty())
-     {
-         current.coord[0] = start_x;
-         current.coord[1] = start_y;
-         current.cost = 0;
-         ROS_WARN("Can't reach goal point. There is no safe path");
-         Path.push_back(current);
-         return Path;
-     }
-     
-     while (!(current.coord[0] == start_x && current.coord[1] == start_y))
-     {
-     	 
-         Path.push_back(current);
-         int prev_x = current.coord[0], prev_y = current.coord[1];
-         Came_From.get_prev(current.coord[0], current.coord[1], current.coord);
-     }
-     ROS_INFO("Path ready");
-     return Path;
  }
  
  que AnglePlanner::neighbours(int current_x, int current_y)
@@ -166,6 +151,12 @@ namespace angle_planner {
      }
      return neighbour;
  }
+
+ double AnglePlanner::step_cost(int prev_x, int prev_y, int next_x, int next_y)
+ {
+    if (abs(prev_x - next_x) == 1 && abs(prev_y - next_y) == 1) return sqrt(2);
+    else return 1;
+ }
  
  double AnglePlanner::heuristic(int current_x, int current_y, int goal_x, int goal_y)
  {
@@ -176,41 +167,75 @@ namespace angle_planner {
      return sqrt(((goal_dx - current_dx)*(goal_dx - current_dx)) + ((goal_dy - current_dy)*(goal_dy - current_dy)));
  }
  
- double AnglePlanner::step_cost(int prev_x, int prev_y, int next_x, int next_y)
- {
-    if (abs(prev_x - next_x) == 1 && abs(prev_y - next_y) == 1) return sqrt(2);
-    else return 1;
- }
  
  double AnglePlanner::get_orientation(int prev_x, int prev_y, int next_x, int next_y)
  {
      if (prev_x > bound_x || prev_y > bound_y)  ROS_WARN("Cells are out of restrict bounds");
      
-     for (int i = 0; i < Areas.size(); i++)
+     if (next_y - prev_y == 1)
      {
-     	if (prev_x >= Areas[i].min_x && prev_y >= Areas[i].min_y && prev_x <= Areas[i].max_x && prev_y <= Areas[i].max_y)
-     	{
-	     if (next_x - prev_x == 1)
-	     {
-		 if (next_y - prev_y == 0) return Areas[i].restr[0];
-		 if (next_y - prev_y == 1) return Areas[i].restr[1];
-		 if (next_y - prev_y == -1) return Areas[i].restr[7];
-	     }
-	     if (next_x - prev_x == 0)
-	     {
-		 if (next_y - prev_y == 1) return Areas[i].restr[2];
-		 if (next_y - prev_y == -1) return Areas[i].restr[6];
-	     }
-	     if (next_x - prev_x == -1)
-	     {
-		 if (next_y - prev_y == 0) return Areas[i].restr[4];
-		 if (next_y - prev_y == 1) return Areas[i].restr[3];
-		 if (next_y - prev_y == -1) return Areas[i].restr[5];
-	     }
-	}
+         if (next_x - prev_x == 0) return Orientation[prev_x][prev_y][0];
+         if (next_x - prev_x == -1) return Orientation[prev_x][prev_y][1];
+         if (next_x - prev_x == 1) return Orientation[prev_x][prev_y][7];
+     }
+     if (next_y - prev_y == 0)
+     {
+         if (next_x - prev_x == -1) return Orientation[prev_x][prev_y][2];
+         if (next_x - prev_x == 1) return Orientation[prev_x][prev_y][6];
+     }
+     if (next_y - prev_y == -1)
+     {
+         if (next_x - prev_x == 0) return Orientation[prev_x][prev_y][4];
+         if (next_x - prev_x == -1) return Orientation[prev_x][prev_y][3];
+         if (next_x - prev_x == 1) return Orientation[prev_x][prev_y][5];
      }
      return 0;
  }
+ 
+ std::vector<point> AnglePlanner::structPath(step Came_From, int start_x, int start_y, int goal_x, int goal_y)
+ {
+     point current;
+     std::vector<point> Path;
+     
+     current.coord[0] = goal_x;
+     current.coord[1] = goal_y;
+     current.cost = 0;
+     
+     if (Came_From.is_empty())
+     {
+         current.coord[0] = start_x;
+         current.coord[1] = start_y;
+         current.cost = 0;
+         ROS_WARN("Can't reach goal point. There is no safe path");
+         Path.push_back(current);
+         return Path;
+     }
+     
+     while (!(current.coord[0] == start_x && current.coord[1] == start_y))
+     {
+     	 
+         Path.push_back(current);
+         int prev_x = current.coord[0], prev_y = current.coord[1];
+         Came_From.get_prev(current.coord[0], current.coord[1], current.coord);
+     }
+     ROS_INFO("Path ready");
+     return Path;
+ }
+
+void AnglePlanner::create_orientation(unsigned int lim_x, unsigned int lim_y)
+{
+    Orientation = new double**[lim_x];
+    for (unsigned long int i = 0; i < lim_x; i++)
+    {
+    	Orientation[i] = new double*[lim_y];
+    	for (unsigned long int j = 0; j < lim_y; j++)
+    	{
+    		Orientation[i][j] = new double[8];
+    		for (int m = 0; m < 8; m++)  Orientation[i][j][m] = 0;
+    	}
+    }
+}
+
 
 void AnglePlanner::put_orientation(const std_msgs::String::ConstPtr& msg)
 {
@@ -224,7 +249,7 @@ void AnglePlanner::put_orientation(const std_msgs::String::ConstPtr& msg)
     vector<int> lines;
     string line;
     double min_x, min_y, max_x, max_y;
-    restr_area_8 R;
+    unsigned int min_map_x, min_map_y, max_map_x, max_map_y;
     double restr;
     
     while (getline(orient_file, line))
@@ -261,10 +286,11 @@ void AnglePlanner::put_orientation(const std_msgs::String::ConstPtr& msg)
     	orient_file >> max_x;
     	orient_file >> max_y;
     	
-    	costmap_->worldToMap(min_x, min_y, R.min_x, R.min_y);
-    	costmap_->worldToMap(max_x, max_y, R.max_x, R.max_y);
+    	costmap_->worldToMap(min_x, min_y, min_map_x, min_map_y);
+    	costmap_->worldToMap(max_x, max_y, max_map_x, max_map_y);
+    	//cout << bound_x << " " << bound_y << "\n";
     	
-    	if (R.max_x > bound_x || R.max_y > bound_y)
+    	if (max_map_x > bound_x || max_map_y > bound_y)
     	{
     	   ROS_WARN("Bounds for orientation restrictions are out of map bounds in line %d file %s. This restrictions will not be applied", i, filepath);
     	   continue;
@@ -273,11 +299,19 @@ void AnglePlanner::put_orientation(const std_msgs::String::ConstPtr& msg)
     	
     	for (int n = 0; n < 8; n++)
     	{
-    	   orient_file >> R.restr[n];   
+    	   orient_file >> restr;
+    	   for (unsigned int i = min_map_x; i < max_map_x; i++)
+    	   {
+     	    	for (unsigned int j = min_map_y; j < max_map_y; j++)
+     	    	{
+     	    		Orientation[i][j][n] = restr;
+     	    	}
+    	   }   
     	}
     	
-    	Areas.push_back(R);	
+    	
     }
+
 }
 
  bool AnglePlanner::makePlan(const geometry_msgs::PoseStamped& start, const geometry_msgs::PoseStamped& goal,  std::vector<geometry_msgs::PoseStamped>& plan )
