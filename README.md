@@ -34,12 +34,13 @@ First number reflects the assessment of the transition
 when the robot moves along the y-axis, next angle evaluations
 go by roundabout counterclockwise.
 ```no-highlight
-For 8 neighbours:                   For 16 neighbours:
-                                    3   2   1  16  15
-2   1   8                           4              14
-3  i,j  7                           5      i,j     13
-4   5   6                           6              12
-                                    7   8   9  10  11 
+              x                                           x
+              ^                         3   2   1  16  15 ^
+    2   1   8 |                         4              14 |
+    3  i,j  7 |                         5      i,j     13 |
+    4   5   6 |                         6              12 |
+  y<----------|                         7   8   9  10  11 |
+                                      y<------------------|
 ```
 Data line:
 ```no-highlight
