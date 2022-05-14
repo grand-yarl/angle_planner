@@ -25,14 +25,16 @@
  #ifndef GLOBAL_PLANNER_CPP
  #define GLOBAL_PLANNER_CPP
 
-struct restr_area_8
+struct restr_area
 {
   unsigned int min_x;
   unsigned int min_y;
   unsigned int max_x;
   unsigned int max_y;
-  double restr[8];
+  double restr_8[8];
+  double restr_16[16];
 };
+
 
  namespace angle_planner {
 
@@ -46,9 +48,9 @@ struct restr_area_8
   int costmap_critical_;
   double orientation_critical_;
   double orientation_coeff_;
-  std_msgs::Bool use_16_;
+  bool use_16_, buffer_use_16;
   
-  vector<restr_area_8> Areas;
+  vector<restr_area> Areas;
   
   dynamic_reconfigure::Server<angle_planner::AnglePlannerConfig> *dsrv_;
     
@@ -65,6 +67,8 @@ struct restr_area_8
   double step_cost(int prev_x, int prev_y, int next_x, int next_y);
   
   double get_orientation(int prev_x, int prev_y, int next_x, int next_y);
+  
+  void get_format(const std_msgs::Bool::ConstPtr& format);
   
   void put_orientation(const std_msgs::String::ConstPtr& msg);
   

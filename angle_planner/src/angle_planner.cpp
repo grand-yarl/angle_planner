@@ -39,14 +39,15 @@ namespace angle_planner {
     costmap_critical_ = config.costmap_critical;
     orientation_critical_ = config.orientation_critical;
     orientation_coeff_ = config.orientation_coeff;
-    use_16_.data = config.use_16;
  }
 
  step AnglePlanner::Dijkstra_search(int start_x, int start_y, int goal_x, int goal_y)
  {
     ros::NodeHandle n;
     
-    ros::Subscriber sub = n.subscribe("orientation_file", 1000, &AnglePlanner::put_orientation, this);
+    ros::Subscriber sub1 = n.subscribe("orientation_format", 1000, &AnglePlanner::get_format, this);
+    
+    ros::Subscriber sub2 = n.subscribe("orientation_file", 1000, &AnglePlanner::put_orientation, this);
     
     que Frontier;
     Frontier.put(start_x, start_y, 0);
@@ -68,7 +69,7 @@ namespace angle_planner {
         current = Frontier.pop_min();
         current_x = current.coord[0];
         current_y = current.coord[1];
-        
+        use_16_ = buffer_use_16;
         if (current.cost >= 10e9)
         {
             Came_From.clear();
@@ -80,8 +81,13 @@ namespace angle_planner {
             ROS_INFO("Path is available, now it will be constructed");
             break;
         }
-        op++;
         
+        if (heuristic(current_x, current_y, goal_x, goal_y) <= sqrt(2) + 0.01)
+        {
+            use_16_ = false;
+        }
+        
+        op++;
         que N = neighbours(current_x, current_y);
         point next;
         while (!N.is_empty())
@@ -101,7 +107,6 @@ namespace angle_planner {
             }
         }
     }
-    
     return Came_From;
  }
   
@@ -137,32 +142,63 @@ namespace angle_planner {
  
  que AnglePlanner::neighbours(int current_x, int current_y)
  {
-     int i = current_x, j = current_y + 1;
      que neighbour;
      
-     for (int number = 0; number < 8; number++)
+     if (use_16_ == true)
      {
-         if (i < bound_x && j < bound_y && i > 0 && j > 0) neighbour.put(i, j, 0);
-         if (j == current_y + 1 && i != current_x + 1)
-         {
-             i++;
-             continue;
-         }
-         if (i == current_x + 1 && j != current_y - 1)
-         {
-             j--;
-             continue;
-         }
-         if (j == current_y - 1 && i != current_x - 1)
-         {
-             i--;
-             continue;
-         }
-         if (i == current_x - 1 && j != current_y + 1)
-         {
-             j++;
-             continue;
-         }
+     	int i = current_x, j = current_y + 2;
+     	for (int number = 0; number < 16; number++)
+	{
+		 if (i < bound_x && j < bound_y && i > 0 && j > 0) neighbour.put(i, j, 0);
+		 if (j == current_y + 2 && i != current_x + 2)
+		 {
+		     i++;
+		     continue;
+		 }
+		 if (i == current_x + 2 && j != current_y - 2)
+		 {
+		     j--;
+		     continue;
+		 }
+		 if (j == current_y - 2 && i != current_x - 2)
+		 {
+		     i--;
+		     continue;
+		 }
+		 if (i == current_x - 2 && j != current_y + 2)
+		 {
+		     j++;
+		     continue;
+		 }
+	 }
+     }
+     else
+     {
+             int i = current_x, j = current_y + 1;
+	     for (int number = 0; number < 8; number++)
+	     {
+		 if (i < bound_x && j < bound_y && i > 0 && j > 0) neighbour.put(i, j, 0);
+		 if (j == current_y + 1 && i != current_x + 1)
+		 {
+		     i++;
+		     continue;
+		 }
+		 if (i == current_x + 1 && j != current_y - 1)
+		 {
+		     j--;
+		     continue;
+		 }
+		 if (j == current_y - 1 && i != current_x - 1)
+		 {
+		     i--;
+		     continue;
+		 }
+		 if (i == current_x - 1 && j != current_y + 1)
+		 {
+		     j++;
+		     continue;
+		 }
+	     }
      }
      return neighbour;
  }
@@ -178,8 +214,20 @@ namespace angle_planner {
  
  double AnglePlanner::step_cost(int prev_x, int prev_y, int next_x, int next_y)
  {
-    if (abs(prev_x - next_x) == 1 && abs(prev_y - next_y) == 1) return sqrt(2);
-    else return 1;
+     if (use_16_ == true)
+     {
+        
+     	if (((next_x - prev_x) == 2 || (next_x - prev_x) == -2) && (next_y == prev_y)) return costmap_->getCost((next_x + prev_x) / 2, next_y) + 2;
+     	if ((next_x == prev_x) && ((next_y - prev_y) == 2 || (next_y - prev_y) == -2)) return costmap_->getCost(next_x ,(next_y + prev_y) / 2) + 2;
+     	if (((next_x - prev_x) == 2 || (next_x - prev_x) == -2) && ((next_y - prev_y) == 2 || (next_y - prev_y) == -2)) return costmap_->getCost((next_x + prev_x) / 2,(next_y + prev_y) / 2) + sqrt(8);
+     	if (((next_x - prev_x) == 2 || (next_x - prev_x) == -2) && ((next_y - prev_y) == 1 || (next_y - prev_y) == -1)) return (costmap_->getCost((next_x + prev_x) / 2, prev_y) + costmap_->getCost((next_x + prev_x) / 2, next_y)) / 2 + sqrt(6);
+     	if (((next_x - prev_x) == 1 || (next_x - prev_x) == -1) && ((next_y - prev_y) == 2 || (next_y - prev_y) == -2)) return (costmap_->getCost(next_x,(next_y + prev_y) / 2) + costmap_->getCost(prev_x,(next_y + prev_y) / 2)) / 2 + sqrt(6);
+     }
+     else
+     {
+     	if (((next_x - prev_x) == 1 || (next_x - prev_x) == -1) && ((next_y - prev_y) == 1 || (next_y - prev_y) == -1)) return sqrt(2);
+     	else return 1;
+     }
  }
  
  double AnglePlanner::get_orientation(int prev_x, int prev_y, int next_x, int next_y)
@@ -190,31 +238,76 @@ namespace angle_planner {
      {
      	if (prev_x >= Areas[i].min_x && prev_y >= Areas[i].min_y && prev_x <= Areas[i].max_x && prev_y <= Areas[i].max_y)
      	{
-	     if (next_x - prev_x == 1)
-	     {
-		 if (next_y - prev_y == 0) return Areas[i].restr[0];
-		 if (next_y - prev_y == 1) return Areas[i].restr[1];
-		 if (next_y - prev_y == -1) return Areas[i].restr[7];
-	     }
-	     if (next_x - prev_x == 0)
-	     {
-		 if (next_y - prev_y == 1) return Areas[i].restr[2];
-		 if (next_y - prev_y == -1) return Areas[i].restr[6];
-	     }
-	     if (next_x - prev_x == -1)
-	     {
-		 if (next_y - prev_y == 0) return Areas[i].restr[4];
-		 if (next_y - prev_y == 1) return Areas[i].restr[3];
-		 if (next_y - prev_y == -1) return Areas[i].restr[5];
-	     }
+     		if (use_16_ == true)
+     		{
+		     if (next_x - prev_x == 2)
+		     {
+			 if (next_y - prev_y == 0) return Areas[i].restr_16[0];
+			 if (next_y - prev_y == 1) return Areas[i].restr_16[1];
+			 if (next_y - prev_y == 2) return Areas[i].restr_16[2];
+			 if (next_y - prev_y == -1) return Areas[i].restr_16[15];
+			 if (next_y - prev_y == -2) return Areas[i].restr_16[14];
+		     }
+		     if (next_x - prev_x == 1)
+		     {
+			 if (next_y - prev_y == 2) return Areas[i].restr_16[3];
+			 if (next_y - prev_y == -2) return Areas[i].restr_16[13];
+		     }
+		     if (next_x - prev_x == 0)
+		     {
+			 if (next_y - prev_y == 2) return Areas[i].restr_16[4];
+			 if (next_y - prev_y == -2) return Areas[i].restr_16[12];
+		     }
+		     if (next_x - prev_x == -1)
+		     {
+			 if (next_y - prev_y == 2) return Areas[i].restr_16[5];
+			 if (next_y - prev_y == -2) return Areas[i].restr_16[11];
+		     }
+		     if (next_x - prev_x == -2)
+		     {
+			 if (next_y - prev_y == 0) return Areas[i].restr_16[8];
+			 if (next_y - prev_y == 1) return Areas[i].restr_16[7];
+			 if (next_y - prev_y == 2) return Areas[i].restr_16[6];
+			 if (next_y - prev_y == -1) return Areas[i].restr_16[9];
+			 if (next_y - prev_y == -2) return Areas[i].restr_16[10];
+		     }
+		}
+     		else
+     		{
+		     if (next_x - prev_x == 1)
+		     {
+			 if (next_y - prev_y == 0) return Areas[i].restr_8[0];
+			 if (next_y - prev_y == 1) return Areas[i].restr_8[1];
+			 if (next_y - prev_y == -1) return Areas[i].restr_8[7];
+		     }
+		     if (next_x - prev_x == 0)
+		     {
+			 if (next_y - prev_y == 1) return Areas[i].restr_8[2];
+			 if (next_y - prev_y == -1) return Areas[i].restr_8[6];
+		     }
+		     if (next_x - prev_x == -1)
+		     {
+			 if (next_y - prev_y == 0) return Areas[i].restr_8[4];
+			 if (next_y - prev_y == 1) return Areas[i].restr_8[3];
+			 if (next_y - prev_y == -1) return Areas[i].restr_8[5];
+		     }
+		}
 	}
      }
      return 0;
  }
 
+void AnglePlanner::get_format(const std_msgs::Bool::ConstPtr& format)
+{
+    use_16_ = format->data;
+    buffer_use_16 = format->data;
+    int number = 8;
+    if (use_16_ == true) number = 16;
+    ROS_INFO("Got format [%d]", number);
+}
+
 void AnglePlanner::put_orientation(const std_msgs::String::ConstPtr& msg)
 {
-    
     ROS_INFO("Got file [%s]", msg->data.c_str());
     string filepath = msg->data.c_str();
 
@@ -224,8 +317,9 @@ void AnglePlanner::put_orientation(const std_msgs::String::ConstPtr& msg)
     vector<int> lines;
     string line;
     double min_x, min_y, max_x, max_y;
-    restr_area_8 R;
+    restr_area R;
     double restr;
+    bool have_already = false;
     
     while (getline(orient_file, line))
     {
@@ -270,14 +364,32 @@ void AnglePlanner::put_orientation(const std_msgs::String::ConstPtr& msg)
     	   continue;
     	}
     	
-    	
-    	for (int n = 0; n < 8; n++)
+    	if (buffer_use_16 == true) 
     	{
-    	   orient_file >> R.restr[n];   
+    	   for (int n = 0; n < 16; n++)
+    	   {
+    	   	orient_file >> R.restr_16[n];   
+    	   }
+    	   for (int j = 0; j < Areas.size(); j++)
+    	   {
+    	   	if (R.min_x == Areas[j].min_x && R.min_y == Areas[j].min_y && R.max_x == Areas[j].max_x && R.max_y == Areas[j].max_y) have_already = true; 
+    	   }
+    	}
+    	else 
+    	{
+    	   for (int n = 0; n < 8; n++)
+    	   {
+    	   	orient_file >> R.restr_8[n];   
+    	   }
+    	   for (int j = 0; j < Areas.size(); j++)
+    	   {
+    	   	if (R.min_x == Areas[j].min_x && R.min_y == Areas[j].min_y && R.max_x == Areas[j].max_x && R.max_y == Areas[j].max_y) have_already = true; 
+    	   }
     	}
     	
-    	Areas.push_back(R);	
+    	if (have_already == false) Areas.push_back(R);
     }
+    cout << Areas.size();
 }
 
  bool AnglePlanner::makePlan(const geometry_msgs::PoseStamped& start, const geometry_msgs::PoseStamped& goal,  std::vector<geometry_msgs::PoseStamped>& plan )

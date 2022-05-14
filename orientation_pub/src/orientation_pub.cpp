@@ -10,7 +10,7 @@
 
 using namespace std;
 
-bool check_format(char* filepath)
+bool check_format(char* filepath, std_msgs::Bool &use_16)
 {
     bool file_right = true; //this flag means errors in file
     
@@ -22,7 +22,7 @@ bool check_format(char* filepath)
         return false;
     }
     
-    int curr_line = 0;
+    int curr_line = 0, format = -1;
     vector<int> lines; //this vector is used for storing number of lines with data
     string line;
     
@@ -76,15 +76,21 @@ bool check_format(char* filepath)
                 break;
             }
         }
-        
-        if (number_count != 12 && number_count != 0) //the quantity of numbers should be 12
+        if ((number_count == 12 || number_count == 20) && format == -1)
+        {
+            format = number_count;
+        }
+        if (number_count != format && number_count != 0) //the quantity of numbers should be 12
         {
             ROS_ERROR("Invalid number of double in line %d file %s", curr_line, filepath);
             file_right = false;
         }
-        if (number_count == 12) lines.push_back(curr_line);
+        if (number_count == format) lines.push_back(curr_line);
         
     }
+    
+    if (format == 20) use_16.data = true;
+    else use_16.data = false;
     
     orient_file.clear();
     orient_file.seekg(0);
@@ -110,7 +116,7 @@ bool check_format(char* filepath)
     	    file_right = false;
     	}
     	
-    	for (int j = 0; j < 8; j++)
+    	for (int j = 0; j < format - 4; j++)
     	{
     	    orient_file >> restr;
     	    if (restr < 0 || restr > 1)
@@ -136,29 +142,35 @@ int main (int argc, char **argv) {
     
     ros::NodeHandle n;
     
-    ros::Publisher orientation_pub = n.advertise<std_msgs::String>("orientation_file", 1000);
+    ros::Publisher orientation_pub1 = n.advertise<std_msgs::Bool>("orientation_format", 1000);
+    
+    ros::Publisher orientation_pub2 = n.advertise<std_msgs::String>("orientation_file", 1000);
 
     ros::Rate loop_rate(0.5);
 
+    std_msgs::Bool use_16;
+    
     while (ros::ok())
     {
     
-    	if (check_format(argv[1]) == false)
+    	if (check_format(argv[1], use_16) == false)
     	{
     	    return 1;
     	}
     	
-    	std_msgs::String msg;
+    	std_msgs::String filepath;
 
     	std::stringstream ss;
     	
     	ss << argv[1];
     	
-    	msg.data = ss.str();
+    	filepath.data = ss.str();
 
-    	ROS_INFO("%s", msg.data.c_str());
+    	ROS_INFO("%s", filepath.data.c_str());
+    	
+    	orientation_pub1.publish(use_16);
 
-    	orientation_pub.publish(msg);
+    	orientation_pub2.publish(filepath);
 
     	ros::spinOnce();
 
