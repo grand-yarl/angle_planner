@@ -61,7 +61,7 @@ AnglePlanner:
   
   orientation_coeff - Coefficient of orientation impact, default = 255
   
-  use_16 - Use 16 neighbours instead of 8, default = False
+  use_astar - Use astar algorithm instead of djikstra, default = True
 ```
 7. Build your workspace
 
