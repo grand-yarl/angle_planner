@@ -96,7 +96,8 @@ namespace angle_planner {
             {
                 if (Cost_so_Far.where_el(next.coord[0], next.coord[1]) == false) Cost_so_Far.put(next.coord[0], next.coord[1], new_cost);
                 else Cost_so_Far.update(next.coord[0], next.coord[1], new_cost);
-                priority = new_cost + heuristic(next.coord[0], next.coord[1], goal_x, goal_y);
+                if (use_astar_ == true) priority = new_cost + heuristic(next.coord[0], next.coord[1], goal_x, goal_y);
+                else priority = new_cost;
                 Frontier.put(next.coord[0], next.coord[1], priority);
                 if (Came_From.where_el(next.coord[0], next.coord[1]) == false) Came_From.put(current_x, current_y, next.coord[0], next.coord[1]);
                 else Came_From.update(current_x, current_y, next.coord[0], next.coord[1]);
