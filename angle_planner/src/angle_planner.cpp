@@ -39,15 +39,11 @@ namespace angle_planner {
     costmap_critical_ = config.costmap_critical;
     orientation_critical_ = config.orientation_critical;
     orientation_coeff_ = config.orientation_coeff;
+    use_astar_ = config.use_astar;
  }
 
  step AnglePlanner::Dijkstra_search(int start_x, int start_y, int goal_x, int goal_y)
  {
-    ros::NodeHandle n;
-    
-    ros::Subscriber sub1 = n.subscribe("orientation_format", 1000, &AnglePlanner::get_format, this);
-    
-    ros::Subscriber sub2 = n.subscribe("orientation_file", 1000, &AnglePlanner::put_orientation, this);
     
     que Frontier;
     Frontier.put(start_x, start_y, 0);
@@ -82,7 +78,7 @@ namespace angle_planner {
             break;
         }
         
-        if (heuristic(current_x, current_y, goal_x, goal_y) <= sqrt(2) + 0.01)
+        if (heuristic(current_x, current_y, goal_x, goal_y) < sqrt(2) + 0.01)
         {
             use_16_ = false;
         }
@@ -299,10 +295,9 @@ namespace angle_planner {
 
 void AnglePlanner::get_format(const std_msgs::Bool::ConstPtr& format)
 {
-    use_16_ = format->data;
     buffer_use_16 = format->data;
     int number = 8;
-    if (use_16_ == true) number = 16;
+    if (buffer_use_16 == true) number = 16;
     ROS_INFO("Got format [%d]", number);
 }
 
@@ -394,7 +389,11 @@ void AnglePlanner::put_orientation(const std_msgs::String::ConstPtr& msg)
 
  bool AnglePlanner::makePlan(const geometry_msgs::PoseStamped& start, const geometry_msgs::PoseStamped& goal,  std::vector<geometry_msgs::PoseStamped>& plan )
  {
+ 
+    ros::NodeHandle n;
     
+    ros::Subscriber sub1 = n.subscribe("orientation_format", 1000, &AnglePlanner::get_format, this);
+    ros::Subscriber sub2 = n.subscribe("orientation_file", 1000, &AnglePlanner::put_orientation, this);
     
     float start_world_x = start.pose.position.x;
     float start_world_y = start.pose.position.y;

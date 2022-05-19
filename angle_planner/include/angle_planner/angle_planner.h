@@ -48,6 +48,7 @@ struct restr_area
   int costmap_critical_;
   double orientation_critical_;
   double orientation_coeff_;
+  bool use_astar_;
   bool use_16_, buffer_use_16;
   
   vector<restr_area> Areas;
